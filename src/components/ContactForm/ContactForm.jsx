@@ -1,53 +1,62 @@
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { ErrorMessage, Field, Form, Formik } from "formik";
 import * as Yup from "yup";
 import css from "./ContactForm.module.css";
-import { useId } from "react";
 import { useDispatch } from "react-redux";
 import { addContact } from "../../redux/contactsSlice";
+import { nanoid } from "nanoid";
 
-const schemaValidation = Yup.object().shape({
+const validateSchema = Yup.object().shape({
   name: Yup.string()
-    .min(3, "*Too short!")
-    .max(50, "*Too Long!")
-    .required("*Required"),
-  number: Yup.string().min(3, "*Too short!").required("*Required"),
+    .min(2, "Too Short!")
+    .max(50, "Too Long!")
+    .required("Required"),
+  number: Yup.string()
+    .matches(
+      /^\d{3}-\d{2}-\d{2}$/,
+      "Invalid phone number format (expected: 333-33-33)"
+    )
+    .required("Required"),
 });
+
+const initialValues = {
+  name: "",
+  number: "",
+};
 
 const ContactForm = () => {
   const dispatch = useDispatch();
-  const userNameId = useId();
-  const userNumberId = useId();
 
   const handleSubmit = (values, actions) => {
-    dispatch(addContact(values));
+    dispatch(addContact({ ...values, id: nanoid() }));
     actions.resetForm();
   };
 
+  const nameId = nanoid();
+  const numberId = nanoid();
+
   return (
-    <div className={css["form-container"]}>
-      <Formik
-        initialValues={{
-          name: "",
-          number: "",
-        }}
-        onSubmit={handleSubmit}
-        validationSchema={schemaValidation}
-      >
-        <Form className={css.form}>
-          <label htmlFor={userNameId}>Name</label>
-          <Field name="name" id={userNameId}></Field>
-          <ErrorMessage name="name" className={css.error} component="span" />
-          <label htmlFor={userNumberId} className={css["form-label"]}>
-            Number
-          </label>
-          <Field name="number" id={userNumberId}></Field>
-          <ErrorMessage name="number" className={css.error} component="span" />
-          <button className={css["form-button"]} type="submit">
-            Add contact
-          </button>
-        </Form>
-      </Formik>
-    </div>
+    <Formik
+      initialValues={initialValues}
+      onSubmit={handleSubmit}
+      validationSchema={validateSchema}
+    >
+      <Form className={css.form}>
+        <label htmlFor={nameId}>Name</label>
+        <Field className={css.input} type="text" id={nameId} name="name" />
+        <ErrorMessage className={css.error} name="name" component="span" />
+        <label htmlFor={numberId}>Number</label>
+        <Field
+          className={css.input}
+          type="string"
+          id={numberId}
+          name="number"
+        />
+        <ErrorMessage className={css.error} name="number" component="span" />
+        <button className={css.btn} type="submit">
+          Add contact
+        </button>
+      </Form>
+    </Formik>
   );
 };
 
